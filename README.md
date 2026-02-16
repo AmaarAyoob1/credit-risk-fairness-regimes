@@ -16,7 +16,7 @@ Built with XGBoost, LightGBM, SHAP explainability, and fairness-aware evaluation
 Most credit risk models optimize for a single metric: accuracy (or AUC). But in lending, accuracy alone isn't enough. A model that's 95% accurate overall could still systematically deny loans to protected demographic groups at higher rates — violating fair lending laws and excluding creditworthy borrowers.
 
 This project builds a loan default predictor that:
-- Achieves strong predictive performance (AUC > 0.85)
+- Achieves strong predictive performance AUC of 0.72
 - Audits predictions across demographic groups using fairness metrics
 - Lets users **interactively explore the accuracy ↔ fairness tradeoff**
 - Provides SHAP-based explanations for every prediction
@@ -24,20 +24,20 @@ This project builds a loan default predictor that:
 
 ## Results
 
-| Model | AUC | Accuracy | Demographic Parity Gap | Equal Opportunity Gap |
-|-------|-----|----------|----------------------|----------------------|
-| XGBoost (unconstrained) | 0.88 | 0.84 | 0.12 | 0.09 |
-| XGBoost (fairness-tuned) | 0.86 | 0.82 | 0.04 | 0.03 |
-| LightGBM (unconstrained) | 0.87 | 0.83 | 0.11 | 0.08 |
-| LightGBM (fairness-tuned) | 0.85 | 0.81 | 0.03 | 0.03 |
+| Model | AUC | DP Gap | EO Gap |
+|-------|-----|--------|--------|
+| XGBoost (unconstrained) | 0.722 | 0.052 | 0.029 |
+| XGBoost (fair thresholds) | 0.722 | 0.029 | 0.141 |
+| LightGBM (unconstrained) | 0.721 | 0.050 | 0.028 |
+| LightGBM (fair thresholds) | 0.721 | 0.029 | 0.141 |
 
-> **Key finding:** With threshold adjustment and fairness-aware tuning, we reduced demographic parity gap by ~70% while sacrificing only ~2% AUC — a tradeoff most lenders would accept.
+> **Key finding:** Threshold adjustment reduced the demographic parity gap by 44% (from 0.052 to 0.029) with zero AUC loss. However, this increased the equal opportunity gap — demonstrating the fairness impossibility theorem: improving one fairness metric can worsen another. This tradeoff is explored interactively in the dashboard.
 
 ## Quick Start
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/loan-default-fairness.git
+git clone https://github.com/AmaarAyoob1/loan-default-fairness.git
 cd loan-default-fairness
 
 # Create virtual environment
