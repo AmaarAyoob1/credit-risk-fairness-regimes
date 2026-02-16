@@ -1,7 +1,7 @@
 # Fair Lending: Loan Default Prediction with Fairness Constraints
 
 <p align="center">
-  <img src="docs/dashboard_preview.png" alt="Dashboard Preview" width="800"/>
+  <img src="Dashboard Preview 1.png" alt="Dashboard Preview" width="800"/>
 </p>
 
 **A credit risk model that doesn't just predict defaults — it audits itself for demographic bias.**
