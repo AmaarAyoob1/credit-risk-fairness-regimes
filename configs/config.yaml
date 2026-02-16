@@ -1,0 +1,88 @@
+data:
+  raw_path: "data/raw/lending_club.csv"
+  processed_path: "data/processed/"
+  test_size: 0.2
+  val_size: 0.1
+  random_state: 42
+  target_column: "loan_status"
+  protected_attribute: "home_ownership"  # proxy for demographic analysis
+
+features:
+  numerical:
+    - loan_amnt
+    - int_rate
+    - installment
+    - annual_inc
+    - dti
+    - open_acc
+    - pub_rec
+    - revol_bal
+    - revol_util
+    - total_acc
+    - mort_acc
+    - pub_rec_bankruptcies
+  categorical:
+    - term
+    - grade
+    - sub_grade
+    - emp_length
+    - home_ownership
+    - verification_status
+    - purpose
+    - addr_state
+  engineered:
+    - debt_to_income_ratio
+    - credit_utilization
+    - income_to_loan_ratio
+    - monthly_burden_ratio
+    - credit_history_length
+    - derogatory_flag
+    - high_revolving_flag
+
+model:
+  xgboost:
+    n_estimators: 500
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 5
+    scale_pos_weight: 1
+    eval_metric: "auc"
+    early_stopping_rounds: 50
+  lightgbm:
+    n_estimators: 500
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 5
+    num_leaves: 31
+    metric: "auc"
+    early_stopping_rounds: 50
+
+fairness:
+  protected_attribute: "home_ownership"
+  metrics:
+    - demographic_parity
+    - equal_opportunity
+    - predictive_parity
+    - calibration
+  thresholds:
+    demographic_parity_gap: 0.05
+    equal_opportunity_gap: 0.05
+    predictive_parity_gap: 0.05
+    calibration_gap: 0.03
+  approaches:
+    - threshold_adjustment
+    - reweighting
+    - constrained_optimization
+
+optuna:
+  n_trials: 50
+  timeout: 3600
+
+output:
+  model_path: "models/"
+  results_path: "results/"
+  shap_path: "results/shap/"

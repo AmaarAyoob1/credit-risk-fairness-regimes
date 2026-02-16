@@ -1,0 +1,378 @@
+{
+  "xgboost": {
+    "unconstrained": {
+      "auc": 0.7218261115522178,
+      "fairness_audit": {
+        "demographic_parity": {
+          "metric": "demographic_parity",
+          "group_rates": {
+            "0": 1.0,
+            "1": 0.9888655334186316,
+            "2": 1.0,
+            "3": 1.0,
+            "4": 0.9745227375841972,
+            "5": 0.9481475907863921
+          },
+          "gap": 0.0518524092136079,
+          "max_group": 0,
+          "min_group": 5,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "equal_opportunity": {
+          "metric": "equal_opportunity",
+          "group_rates": {
+            "0": 1.0,
+            "1": 0.9942174177271137,
+            "2": 1.0,
+            "3": 1.0,
+            "4": 0.9859192114758426,
+            "5": 0.9711659824765639
+          },
+          "gap": 0.028834017523436062,
+          "max_group": 0,
+          "min_group": 5,
+          "passes": true,
+          "threshold": 0.05
+        },
+        "predictive_parity": {
+          "metric": "predictive_parity",
+          "group_rates": {
+            "0": 0.8070175438596491,
+            "1": 0.8315799202107177,
+            "2": 0.8888888888888888,
+            "3": 0.7931034482758621,
+            "4": 0.8024209433083838,
+            "5": 0.7861677644631379
+          },
+          "gap": 0.10272112442575099,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "overall": {
+          "passes_all": false,
+          "failed_metrics": [
+            "demographic_parity",
+            "predictive_parity",
+            "calibration"
+          ]
+        }
+      }
+    },
+    "reweighted": {
+      "auc": 0.7096453042956359,
+      "fairness_audit": {
+        "demographic_parity": {
+          "metric": "demographic_parity",
+          "group_rates": {
+            "0": 0.8947368421052632,
+            "1": 0.5952370072503503,
+            "2": 0.8888888888888888,
+            "3": 0.9655172413793104,
+            "4": 0.5710396817087215,
+            "5": 0.5741292877230274
+          },
+          "gap": 0.39447755967058884,
+          "max_group": 3,
+          "min_group": 4,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "equal_opportunity": {
+          "metric": "equal_opportunity",
+          "group_rates": {
+            "0": 0.9565217391304348,
+            "1": 0.6483766413141563,
+            "2": 0.875,
+            "3": 1.0,
+            "4": 0.6322274047346651,
+            "5": 0.6444580601678819
+          },
+          "gap": 0.3677725952653349,
+          "max_group": 3,
+          "min_group": 4,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "predictive_parity": {
+          "metric": "predictive_parity",
+          "group_rates": {
+            "0": 0.8627450980392157,
+            "1": 0.9009429737579487,
+            "2": 0.875,
+            "3": 0.8214285714285714,
+            "4": 0.8781322576702114,
+            "5": 0.8615543396350054
+          },
+          "gap": 0.07951440232937734,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "overall": {
+          "passes_all": false,
+          "failed_metrics": [
+            "demographic_parity",
+            "equal_opportunity",
+            "predictive_parity",
+            "calibration"
+          ]
+        }
+      }
+    },
+    "threshold_adjusted": {
+      "auc": 0.7218261115522178,
+      "group_thresholds": {
+        "0": 0.2599999999999999,
+        "1": 0.2599999999999999,
+        "2": 0.38999999999999985,
+        "3": 0.19999999999999996,
+        "4": 0.3099999999999999,
+        "5": 0.33999999999999986
+      },
+      "fairness_audit": {
+        "demographic_parity": {
+          "metric": "demographic_parity",
+          "group_rates": {
+            "0": 0.8070175438596491,
+            "1": 0.7926871991713885,
+            "2": 0.7777777777777778,
+            "3": 0.7931034482758621,
+            "4": 0.7999162391372631,
+            "5": 0.8004345331590185
+          },
+          "gap": 0.029239766081871288,
+          "max_group": 0,
+          "min_group": 2,
+          "passes": true,
+          "threshold": 0.05
+        },
+        "equal_opportunity": {
+          "metric": "equal_opportunity",
+          "group_rates": {
+            "0": 0.8913043478260869,
+            "1": 0.8385573009705162,
+            "2": 0.75,
+            "3": 0.8260869565217391,
+            "4": 0.8475754642259966,
+            "5": 0.8591017707248331
+          },
+          "gap": 0.14130434782608692,
+          "max_group": 0,
+          "min_group": 2,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "predictive_parity": {
+          "metric": "predictive_parity",
+          "group_rates": {
+            "0": 0.8913043478260869,
+            "1": 0.8749651720261714,
+            "2": 0.8571428571428571,
+            "3": 0.8260869565217391,
+            "4": 0.8404013961605584,
+            "5": 0.8237899956523271
+          },
+          "gap": 0.06751435217375978,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "overall": {
+          "passes_all": false,
+          "failed_metrics": [
+            "equal_opportunity",
+            "predictive_parity",
+            "calibration"
+          ]
+        }
+      }
+    }
+  },
+  "lightgbm": {
+    "unconstrained": {
+      "auc": 0.7205812938387678,
+      "fairness_audit": {
+        "demographic_parity": {
+          "metric": "demographic_parity",
+          "group_rates": {
+            "0": 1.0,
+            "1": 0.9898022908669957,
+            "2": 1.0,
+            "3": 1.0,
+            "4": 0.9756744494468294,
+            "5": 0.9497653332831708
+          },
+          "gap": 0.05023466671682919,
+          "max_group": 0,
+          "min_group": 5,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "equal_opportunity": {
+          "metric": "equal_opportunity",
+          "group_rates": {
+            "0": 1.0,
+            "1": 0.9945765271357802,
+            "2": 1.0,
+            "3": 1.0,
+            "4": 0.9864032385813606,
+            "5": 0.9721218062618712
+          },
+          "gap": 0.02787819373812883,
+          "max_group": 0,
+          "min_group": 5,
+          "passes": true,
+          "threshold": 0.05
+        },
+        "predictive_parity": {
+          "metric": "predictive_parity",
+          "group_rates": {
+            "0": 0.8070175438596491,
+            "1": 0.8310929865733082,
+            "2": 0.8888888888888888,
+            "3": 0.7931034482758621,
+            "4": 0.8018672199170125,
+            "5": 0.785601109130521
+          },
+          "gap": 0.10328777975836789,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "overall": {
+          "passes_all": false,
+          "failed_metrics": [
+            "demographic_parity",
+            "predictive_parity",
+            "calibration"
+          ]
+        }
+      }
+    },
+    "reweighted": {
+      "auc": 0.7034750230592196,
+      "fairness_audit": {
+        "demographic_parity": {
+          "metric": "demographic_parity",
+          "group_rates": {
+            "0": 0.9122807017543859,
+            "1": 0.5936681289221958,
+            "2": 0.7777777777777778,
+            "3": 0.9310344827586207,
+            "4": 0.5654207238334554,
+            "5": 0.570282446553362
+          },
+          "gap": 0.36561375892516523,
+          "max_group": 3,
+          "min_group": 4,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "equal_opportunity": {
+          "metric": "equal_opportunity",
+          "group_rates": {
+            "0": 0.9782608695652174,
+            "1": 0.6456050533139353,
+            "2": 0.75,
+            "3": 0.9565217391304348,
+            "4": 0.6252310129367245,
+            "5": 0.6384412719808835
+          },
+          "gap": 0.35302985662849296,
+          "max_group": 0,
+          "min_group": 4,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "predictive_parity": {
+          "metric": "predictive_parity",
+          "group_rates": {
+            "0": 0.8653846153846154,
+            "1": 0.8994624828417852,
+            "2": 0.8571428571428571,
+            "3": 0.8148148148148148,
+            "4": 0.8770446268748843,
+            "5": 0.8592680553493972
+          },
+          "gap": 0.08464766802697044,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "overall": {
+          "passes_all": false,
+          "failed_metrics": [
+            "demographic_parity",
+            "equal_opportunity",
+            "predictive_parity",
+            "calibration"
+          ]
+        }
+      }
+    },
+    "threshold_adjusted": {
+      "auc": 0.7205812938387678,
+      "group_thresholds": {
+        "0": 0.2599999999999999,
+        "1": 0.2599999999999999,
+        "2": 0.40999999999999986,
+        "3": 0.20999999999999996,
+        "4": 0.3099999999999999,
+        "5": 0.33999999999999986
+      },
+      "fairness_audit": {
+        "demographic_parity": {
+          "metric": "demographic_parity",
+          "group_rates": {
+            "0": 0.8070175438596491,
+            "1": 0.7931441540242491,
+            "2": 0.7777777777777778,
+            "3": 0.7931034482758621,
+            "4": 0.7972638118172617,
+            "5": 0.8008954016610077
+          },
+          "gap": 0.029239766081871288,
+          "max_group": 0,
+          "min_group": 2,
+          "passes": true,
+          "threshold": 0.05
+        },
+        "equal_opportunity": {
+          "metric": "equal_opportunity",
+          "group_rates": {
+            "0": 0.8913043478260869,
+            "1": 0.8385573009705162,
+            "2": 0.75,
+            "3": 0.8260869565217391,
+            "4": 0.8459473730528909,
+            "5": 0.8591507873292078
+          },
+          "gap": 0.14130434782608692,
+          "max_group": 0,
+          "min_group": 2,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "predictive_parity": {
+          "metric": "predictive_parity",
+          "group_rates": {
+            "0": 0.8913043478260869,
+            "1": 0.8744610775568209,
+            "2": 0.8571428571428571,
+            "3": 0.8260869565217391,
+            "4": 0.8415776571528629,
+            "5": 0.8233629274708756
+          },
+          "gap": 0.06794142035521133,
+          "passes": false,
+          "threshold": 0.05
+        },
+        "overall": {
+          "passes_all": false,
+          "failed_metrics": [
+            "equal_opportunity",
+            "predictive_parity",
+            "calibration"
+          ]
+        }
+      }
+    }
+  }
+}
