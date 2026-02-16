@@ -2,6 +2,7 @@
 
 <p align="center">
   <img src="Dashboard Preview 1.png" alt="Dashboard Preview" width="800"/>
+  <img src="Dashboard Preview 2.png" alt="Dashboard Preview" width="800"/>
 </p>
 
 **A credit risk model that doesn't just predict defaults — it audits itself for demographic bias.**
