@@ -1,157 +1,173 @@
-# Fair Lending: Loan Default Prediction with Fairness Constraints
+# DocQuery: RAG-Powered Document Q&A with Citations
 
 <p align="center">
-  <img src="Dashboard Preview 1.png" alt="Dashboard Preview" width="800"/>
-  <img src="Dashboard Preview 2.png" alt="Dashboard Preview" width="800"/>
+  <img src="docs/demo.gif" alt="Demo" width="800"/>
 </p>
 
-**A credit risk model that doesn't just predict defaults — it audits itself for demographic bias.**
+**Upload any PDF. Ask questions in plain English. Get cited answers.**
 
-Built with XGBoost, LightGBM, SHAP explainability, and fairness-aware evaluation metrics aligned with CFPB and EU AI Act regulatory requirements.
+A Retrieval-Augmented Generation (RAG) system that lets you chat with your documents — research papers, financial reports, legal contracts, or textbooks — and get accurate, cited answers grounded in the actual text.
 
 ---
 
 ## Why This Project Exists
 
-Most credit risk models optimize for a single metric: accuracy (or AUC). But in lending, accuracy alone isn't enough. A model that's 95% accurate overall could still systematically deny loans to protected demographic groups at higher rates — violating fair lending laws and excluding creditworthy borrowers.
+LLMs are powerful but they hallucinate. When you ask ChatGPT about a specific document, it might make up facts that sound right but aren't in the text. RAG solves this by forcing the model to retrieve relevant passages first, then generate answers based only on what it found. Every answer in DocQuery includes page-level citations so you can verify.
 
-This project builds a loan default predictor that:
-- Achieves strong predictive performance AUC of 0.72
-- Audits predictions across demographic groups using fairness metrics
-- Lets users **interactively explore the accuracy ↔ fairness tradeoff**
-- Provides SHAP-based explanations for every prediction
-- Flags when a model's decisions may be discriminatory
+This isn't a wrapper around an API — it's a full RAG pipeline with chunking strategies, embedding models, vector search, reranking, and citation tracking built from scratch.
 
-## Results
+## Key Features
 
-| Model | AUC | DP Gap | EO Gap |
-|-------|-----|--------|--------|
-| XGBoost (unconstrained) | 0.722 | 0.052 | 0.029 |
-| XGBoost (fair thresholds) | 0.722 | 0.029 | 0.141 |
-| LightGBM (unconstrained) | 0.721 | 0.050 | 0.028 |
-| LightGBM (fair thresholds) | 0.721 | 0.029 | 0.141 |
-
-> **Key finding:** Threshold adjustment reduced the demographic parity gap by 44% (from 0.052 to 0.029) with zero AUC loss. However, this increased the equal opportunity gap — demonstrating the fairness impossibility theorem: improving one fairness metric can worsen another. This tradeoff is explored interactively in the dashboard.
+- **Multi-document support** — upload multiple PDFs and query across all of them
+- **Citation tracking** — every answer shows which document and page it came from
+- **Hybrid search** — combines semantic (vector) search with keyword (BM25) search for better retrieval
+- **Configurable chunking** — supports fixed-size, sentence-based, and recursive chunking strategies
+- **Conversation memory** — follow-up questions understand context from previous Q&A
+- **Source highlighting** — see the exact passages used to generate each answer
 
 ## Quick Start
 
 ```bash
 # Clone the repo
-git clone https://github.com/AmaarAyoob1/loan-default-fairness.git
-cd loan-default-fairness
+git clone https://github.com/YOUR_USERNAME/rag-document-qa.git
+cd rag-document-qa
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Download the data
-python src/data_pipeline.py --download
+# Set up your API key (for the LLM — embeddings run locally)
+export OPENAI_API_KEY="your-key-here"
+# OR for fully local: no API key needed (uses Ollama)
 
-# Train models
-python src/train.py --config configs/config.yaml
-
-# Launch the dashboard
+# Launch the app
 streamlit run streamlit_app/app.py
 ```
 
 ## Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Raw Data    │────▶│  Feature     │────▶│  Model      │
-│  (Lending    │     │  Engineering │     │  Training   │
-│   Club CSV)  │     │  Pipeline    │     │  (XGB/LGBM) │
-└─────────────┘     └──────────────┘     └──────┬──────┘
-                                                 │
-                    ┌──────────────┐     ┌───────▼──────┐
-                    │  Streamlit   │◀────│  Fairness    │
-                    │  Dashboard   │     │  Evaluation  │
-                    │              │     │  + SHAP      │
-                    └──────────────┘     └──────────────┘
+                    ┌─────────────────────────────────────────────┐
+                    │              INGESTION PIPELINE              │
+                    │                                             │
+  PDF Upload ──────▶│  Extract ──▶ Chunk ──▶ Embed ──▶ Store    │
+                    │  (PyMuPDF)  (Recursive) (HuggingFace) (Chroma) │
+                    └─────────────────────────────────────────────┘
+                                                    │
+                                                    ▼
+                    ┌─────────────────────────────────────────────┐
+                    │               QUERY PIPELINE                │
+                    │                                             │
+  User Question ───▶│  Embed ──▶ Retrieve ──▶ Rerank ──▶ Generate │
+                    │  Query    (Hybrid)    (Cross-Enc) (LLM+Cite)│
+                    └─────────────────────────────────────────────┘
+                                                    │
+                                                    ▼
+                                          Cited Answer + Sources
 ```
 
-## Data
+## How It Works
 
-This project uses the [Lending Club Loan Dataset](https://www.kaggle.com/datasets/wordsforthewise/lending-club) (~2.2M loans, 150+ features). The data pipeline automatically:
-- Downloads and caches the dataset
-- Handles missing values and outliers
-- Engineers 25+ features from raw loan attributes
-- Splits data with stratification on both target and protected attributes
+### 1. Document Ingestion
+- PDFs are parsed with PyMuPDF, preserving page numbers and structure
+- Text is split into overlapping chunks using recursive character splitting
+- Each chunk is embedded using a local HuggingFace model (`all-MiniLM-L6-v2`)
+- Embeddings are stored in ChromaDB with metadata (doc name, page number, chunk index)
 
-**Note:** Raw data is not committed to this repo. Run `python src/data_pipeline.py --download` to fetch it.
+### 2. Retrieval (Hybrid Search)
+- User query is embedded using the same model
+- **Semantic search**: finds chunks with similar meaning via cosine similarity in ChromaDB
+- **Keyword search**: BM25 ranking catches exact matches that semantic search might miss
+- Results from both are merged using Reciprocal Rank Fusion (RRF)
 
-## Fairness Metrics Explained
+### 3. Reranking
+- Top candidates are reranked using a cross-encoder model for more precise relevance scoring
+- This step significantly improves answer quality over raw retrieval
 
-| Metric | What It Measures | Target |
-|--------|-----------------|--------|
-| **Demographic Parity** | Are approval rates equal across groups? | Gap < 0.05 |
-| **Equal Opportunity** | Are true positive rates equal across groups? | Gap < 0.05 |
-| **Predictive Parity** | Is precision equal across groups? | Gap < 0.05 |
-| **Calibration** | Are predicted probabilities accurate across groups? | Gap < 0.03 |
+### 4. Answer Generation
+- Retrieved passages are formatted with source metadata
+- LLM generates an answer constrained to the provided context
+- Citation markers link each claim to specific source passages
+- If the answer isn't in the documents, the model says so instead of hallucinating
 
 ## Project Structure
 
 ```
-loan-default-fairness/
+rag-document-qa/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
 ├── LICENSE
 ├── configs/
-│   └── config.yaml              # Model & pipeline configuration
+│   └── config.yaml           # All configurable parameters
 ├── data/
-│   └── README.md                # Data sources & download instructions
-├── docs/
-│   └── architecture.md          # Detailed technical documentation
-├── notebooks/
-│   └── exploration.ipynb        # EDA and initial analysis
+│   └── README.md              # Sample documents for testing
 ├── src/
 │   ├── __init__.py
-│   ├── data_pipeline.py         # Data download, cleaning, feature engineering
-│   ├── features.py              # Feature engineering functions
-│   ├── train.py                 # Model training with fairness constraints
-│   ├── evaluate.py              # Evaluation metrics + fairness auditing
-│   ├── fairness.py              # Fairness metric calculations
-│   └── explain.py               # SHAP explanations
+│   ├── document_loader.py     # PDF parsing and text extraction
+│   ├── chunker.py             # Text chunking strategies
+│   ├── embeddings.py          # Embedding model wrapper
+│   ├── vector_store.py        # ChromaDB operations
+│   ├── retriever.py           # Hybrid retrieval + reranking
+│   ├── generator.py           # LLM answer generation with citations
+│   └── rag_pipeline.py        # End-to-end orchestration
 ├── streamlit_app/
-│   └── app.py                   # Interactive dashboard
-└── tests/
-    ├── test_features.py
-    ├── test_fairness.py
-    └── test_pipeline.py
+│   └── app.py                 # Interactive web interface
+├── tests/
+│   ├── test_chunker.py
+│   ├── test_retriever.py
+│   └── test_pipeline.py
+└── docs/
+    └── architecture.md
 ```
 
-## Technical Approach
+## Configuration
 
-**Feature Engineering:** 25+ features including debt-to-income ratios, credit utilization, payment history patterns, employment length encoding, and geographic risk indicators.
+All parameters are in `configs/config.yaml`:
 
-**Modeling:** XGBoost and LightGBM with Bayesian hyperparameter optimization via Optuna. Models are trained with both unconstrained and fairness-aware objectives.
+```yaml
+chunking:
+  strategy: "recursive"     # Options: fixed, sentence, recursive
+  chunk_size: 512
+  chunk_overlap: 50
 
-**Fairness-Aware Tuning:** Three approaches implemented:
-1. **Threshold adjustment** — per-group decision thresholds to equalize approval rates
-2. **Reweighting** — sample weights inversely proportional to group representation
-3. **Constrained optimization** — custom objective penalizing fairness violations during training
+retrieval:
+  top_k: 10                 # Candidates from vector search
+  rerank_top_k: 5           # Final passages after reranking
+  use_hybrid: true           # Enable BM25 + semantic fusion
 
-**Explainability:** SHAP TreeExplainer for global and local feature importance, with group-level SHAP analysis showing whether features contribute differently to predictions across demographics.
+generation:
+  model: "gpt-4o-mini"      # Or "ollama/llama3" for local
+  temperature: 0.1
+  max_tokens: 1000
+```
+
+## Running Fully Local (No API Key)
+
+DocQuery supports fully local operation using Ollama:
+
+```bash
+# Install Ollama: https://ollama.ai
+ollama pull llama3
+
+# Update config
+# In configs/config.yaml, set: model: "ollama/llama3"
+
+# Run — no API key needed
+streamlit run streamlit_app/app.py
+```
 
 ## What I'd Improve
 
-- Add adversarial debiasing as a fourth fairness approach
-- Implement reject inference to account for selection bias in historical lending data
-- Build a model monitoring pipeline that tracks fairness metrics over time in production
-- Add causal inference methods to distinguish correlation from actual discrimination
-- Expand to multi-class (default severity) rather than binary default/no-default
-
-## Regulatory Context
-
-This project is informed by:
-- **CFPB Circular 2022-03** — adverse action notices for AI-driven lending
-- **ECOA / Regulation B** — prohibition of discrimination in credit decisions
-- **EU AI Act (2024)** — high-risk AI system requirements for credit scoring
-- **SR 11-7 (OCC/Fed)** — model risk management guidance
+- Add support for tables and images in PDFs (currently text-only)
+- Implement query decomposition for complex multi-part questions
+- Add evaluation benchmarks using RAGAS framework
+- Build a feedback loop where users can rate answers to improve retrieval
+- Add support for Word docs, HTML, and markdown in addition to PDFs
+- Implement streaming responses for better UX on long answers
 
 ## License
 
