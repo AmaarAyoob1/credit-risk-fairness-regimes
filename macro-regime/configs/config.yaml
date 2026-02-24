@@ -1,0 +1,103 @@
+# Macro-Regime Credit Risk Analysis Configuration
+# ================================================
+
+data:
+  # Date range for macro data pull
+  start_date: "2005-01-01"    # Pre-2008 crisis to capture full cycle
+  end_date: "2025-12-31"
+  
+  # Yahoo Finance tickers for macro indicators
+  tickers:
+    # Yield curve components
+    treasury_10y: "^TNX"        # 10-Year Treasury yield
+    treasury_5y: "^FVX"         # 5-Year Treasury yield  
+    treasury_13w: "^IRX"        # 13-Week T-Bill rate
+    
+    # Credit conditions
+    high_yield: "HYG"           # iShares High Yield Corporate Bond ETF
+    inv_grade: "LQD"            # iShares Investment Grade Corporate Bond ETF
+    
+    # Market stress indicators
+    vix: "^VIX"                 # CBOE Volatility Index
+    sp500: "SPY"                # S&P 500 proxy
+    
+    # Safe haven / macro
+    gold: "GLD"                 # Gold ETF
+    dollar: "DX-Y.NYB"         # US Dollar Index
+  
+  # Derived features (computed from tickers above)
+  derived_features:
+    yield_curve_slope: ["^TNX", "^IRX"]           # 10Y minus 13W (inversion = recession signal)
+    yield_curve_mid: ["^TNX", "^FVX"]             # 10Y minus 5Y (flattening signal)
+    credit_spread: ["HYG", "LQD"]                 # HY minus IG returns (widening = stress)
+    
+  # Output paths
+  raw_data_path: "data/raw_macro_data.csv"
+  features_path: "data/macro_features.csv"
+
+regime:
+  # Hidden Markov Model parameters
+  n_regimes: 3                  # Expansion, Contraction, Crisis
+  regime_labels:
+    0: "Expansion"
+    1: "Contraction" 
+    2: "Crisis"
+  
+  # Features used for regime detection
+  hmm_features:
+    - yield_curve_slope
+    - credit_spread_rolling
+    - vix_level
+    - sp500_return_60d
+  
+  # Model parameters
+  covariance_type: "full"
+  n_iter: 200
+  random_state: 42
+  
+  # Rolling window for feature smoothing (trading days)
+  rolling_window: 21            # ~1 month
+  
+  # Output
+  model_path: "data/hmm_model.pkl"
+  regimes_path: "data/regime_labels.csv"
+
+stress_testing:
+  # Historical stress scenarios (date ranges)
+  scenarios:
+    gfc_2008:
+      name: "2008 Global Financial Crisis"
+      start: "2007-07-01"
+      end: "2009-06-30"
+    covid_2020:
+      name: "COVID-19 Crash"
+      start: "2020-02-01"
+      end: "2020-09-30"
+    rate_shock_2022:
+      name: "2022 Rate Shock"
+      start: "2022-01-01"
+      end: "2023-03-31"
+    dot_com_2001:
+      name: "Dot-Com Bust"
+      start: "2000-09-01"
+      end: "2002-06-30"
+  
+  # Simulation parameters
+  n_simulations: 10000
+  confidence_levels: [0.95, 0.99]
+
+credit_model:
+  # Path to existing loan default model (relative to loan-default-fairness repo)
+  model_path: "/Users/ayoobamaar/Desktop/loan-default-fairness/models/xgboost_unconstrained.pkl"
+  
+  # Lending Club data date range (for mapping to macro regimes)
+  # Lending Club loans span 2007-2018
+  loan_date_column: "issue_d"
+  
+  # Fairness groups
+  protected_attribute: "home_ownership"
+  groups: ["RENT", "MORTGAGE", "OWN"]
+
+output:
+  figures_dir: "figures/"
+  report_path: "reports/macro_regime_analysis.md"
