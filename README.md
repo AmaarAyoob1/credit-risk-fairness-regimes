@@ -1,173 +1,232 @@
-# DocQuery: RAG-Powered Document Q&A with Citations
+# Credit Risk, Fairness & Macro-Regime Analysis
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Demo" width="800"/>
+  <img src="macro-regime/figures/regime_timeline.png" alt="Regime Timeline" width="800"/>
 </p>
 
-**Upload any PDF. Ask questions in plain English. Get cited answers.**
+**A credit risk system that predicts defaults, audits itself for demographic bias, and stress-tests performance across economic regimes.**
 
-A Retrieval-Augmented Generation (RAG) system that lets you chat with your documents — research papers, financial reports, legal contracts, or textbooks — and get accurate, cited answers grounded in the actual text.
+Built with XGBoost, Hidden Markov Models, Yahoo Finance data, SHAP explainability, and fairness-aware evaluation aligned with CFPB and EU AI Act regulatory requirements.
 
 ---
 
-## Why This Project Exists
+## What Makes This Different
 
-LLMs are powerful but they hallucinate. When you ask ChatGPT about a specific document, it might make up facts that sound right but aren't in the text. RAG solves this by forcing the model to retrieve relevant passages first, then generate answers based only on what it found. Every answer in DocQuery includes page-level citations so you can verify.
+Most student credit risk projects train a model, report AUC, and stop. This project asks the questions that bank model risk teams actually ask:
 
-This isn't a wrapper around an API — it's a full RAG pipeline with chunking strategies, embedding models, vector search, reranking, and citation tracking built from scratch.
+1. **Is the model fair?** — Fairness auditing across demographic groups with per-group threshold optimization
+2. **Does it work in a crisis?** — Regime-conditional evaluation showing how model performance degrades under economic stress
+3. **Can you explain it?** — SHAP-based explanations for every prediction, aligned with ECOA adverse action requirements
 
-## Key Features
+The result: a model that's been validated not just on average, but across the specific macro scenarios regulators require (CCAR, DFAST, CECL).
 
-- **Multi-document support** — upload multiple PDFs and query across all of them
-- **Citation tracking** — every answer shows which document and page it came from
-- **Hybrid search** — combines semantic (vector) search with keyword (BM25) search for better retrieval
-- **Configurable chunking** — supports fixed-size, sentence-based, and recursive chunking strategies
-- **Conversation memory** — follow-up questions understand context from previous Q&A
-- **Source highlighting** — see the exact passages used to generate each answer
+---
+
+## Key Findings
+
+### Credit Risk Model
+
+| Model | AUC | DP Gap | EO Gap |
+|-------|-----|--------|--------|
+| XGBoost (unconstrained) | 0.722 | 0.052 | 0.029 |
+| XGBoost (fair thresholds) | 0.722 | 0.029 | 0.141 |
+| LightGBM (unconstrained) | 0.721 | 0.050 | 0.028 |
+| LightGBM (fair thresholds) | 0.721 | 0.029 | 0.141 |
+
+> **Key finding:** Threshold adjustment reduced the demographic parity gap by 44% (from 0.052 to 0.029) with zero AUC loss. However, this increased the equal opportunity gap — demonstrating the fairness impossibility theorem.
+
+### Macro-Regime Analysis
+
+<p align="center">
+  <img src="macro-regime/figures/combined_dashboard.png" alt="Regime Dashboard" width="800"/>
+</p>
+
+| Metric | Expansion | Contraction | Crisis |
+|--------|-----------|-------------|--------|
+| Default Rate | 19.7% | 21.3% | 22.9% |
+| Model AUC | 0.7361 | 0.7267 | 0.6965 |
+| Calibration Error | −0.0002 | −0.0012 | +0.0028 |
+| 4/5ths Rule | PASSES | PASSES | PASSES |
+
+> **Key finding:** The model loses 4 points of AUC during economic crises (0.736 → 0.697). Default rates are 1.16× higher during Crisis vs Expansion. The model's discriminative power degrades exactly when accurate predictions matter most — which is why banks stress-test models against adverse scenarios.
+
+### Regime Detection
+
+A 3-regime Gaussian Hidden Markov Model trained on yield curve dynamics, credit spreads, VIX, and equity momentum from Yahoo Finance correctly identified all major economic events without supervision:
+
+- ✓ **2008 GFC** — classified as 89.7% Crisis
+- ✓ **2020 COVID** — classified as 66.1% Contraction + 33.9% Crisis
+- ✓ **2022 Rate Shock** — classified as 49.5% Contraction + 47.0% Crisis
+
+<p align="center">
+  <img src="macro-regime/figures/financial_conditions_index.png" alt="Financial Conditions Index" width="800"/>
+</p>
+
+---
+
+## Architecture
+```
+Yahoo Finance API                     Lending Club (1.3M loans)
+(9 tickers, 15 features)             (25+ engineered features)
+    │                                        │
+    ▼                                        ▼
+┌─────────────────┐               ┌─────────────────────┐
+│  Macro Data     │               │  Credit Risk Model   │
+│  Pipeline       │               │  XGBoost / LightGBM  │
+│  (yield curve,  │               │  + SHAP explainer    │
+│   VIX, credit   │               │  + fairness auditing │
+│   spreads)      │               └──────────┬──────────┘
+└────────┬────────┘                          │
+         │                                    │
+         ▼                                    │
+┌─────────────────┐                           │
+│ Regime Detector │                           │
+│ Gaussian HMM    │                           │
+│ (3 regimes:     │                           │
+│  Expansion,     │                           │
+│  Contraction,   │                           │
+│  Crisis)        │                           │
+└────────┬────────┘                           │
+         │              ┌─────────────────┐   │
+         └──────────────▶ Regime-Credit   ◀───┘
+                        │ Analysis        │
+                        │ • AUC by regime │
+                        │ • Calibration   │
+                        │ • Fairness      │
+                        │ • Stress testing│
+                        └────────┬────────┘
+                                 │
+                    ┌────────────┴────────────┐
+                    ▼                         ▼
+           ┌──────────────┐         ┌─────────────────┐
+           │  Streamlit   │         │  Visualizations  │
+           │  Dashboard   │         │  (8 charts)      │
+           └──────────────┘         └─────────────────┘
+```
+
+## Macro Indicators (Yahoo Finance)
+
+| Ticker | Indicator | Economic Rationale |
+|--------|-----------|-------------------|
+| `^TNX` | 10Y Treasury Yield | Benchmark lending rate; drives mortgage and loan pricing |
+| `^IRX` | 13W T-Bill Rate | Short-end rate; yield curve slope = `^TNX − ^IRX` |
+| `^FVX` | 5Y Treasury Yield | Mid-curve flattening signal |
+| `^VIX` | Volatility Index | Market fear → credit tightening → defaults rise |
+| `HYG` | High-Yield Bond ETF | Junk bond proxy; sells off during stress |
+| `LQD` | Investment-Grade Bond ETF | Credit spread = `HYG − LQD` returns |
+| `SPY` | S&P 500 | Equity market health; wealth effect on borrowers |
+| `GLD` | Gold ETF | Flight to safety signal |
+| `DX-Y.NYB` | US Dollar Index | Strong dollar tightens global credit |
 
 ## Quick Start
-
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/rag-document-qa.git
-cd rag-document-qa
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate
+git clone https://github.com/AmaarAyoob1/credit-risk-fairness-regimes.git
+cd credit-risk-fairness-regimes
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Set up your API key (for the LLM — embeddings run locally)
-export OPENAI_API_KEY="your-key-here"
-# OR for fully local: no API key needed (uses Ollama)
+# Download Lending Club data (requires Kaggle credentials)
+python src/data_pipeline.py --download
 
-# Launch the app
+# Train credit risk models
+python src/train.py
+
+# Launch fairness dashboard
 streamlit run streamlit_app/app.py
+
+# Run macro-regime analysis
+cd macro-regime
+pip install -r requirements.txt
+python run_analysis.py --regimes-only    # Regime detection only
+python run_bridge.py                      # Full credit-regime analysis
+python generate_charts.py                 # Generate all visualizations
 ```
-
-## Architecture
-
-```
-                    ┌─────────────────────────────────────────────┐
-                    │              INGESTION PIPELINE              │
-                    │                                             │
-  PDF Upload ──────▶│  Extract ──▶ Chunk ──▶ Embed ──▶ Store    │
-                    │  (PyMuPDF)  (Recursive) (HuggingFace) (Chroma) │
-                    └─────────────────────────────────────────────┘
-                                                    │
-                                                    ▼
-                    ┌─────────────────────────────────────────────┐
-                    │               QUERY PIPELINE                │
-                    │                                             │
-  User Question ───▶│  Embed ──▶ Retrieve ──▶ Rerank ──▶ Generate │
-                    │  Query    (Hybrid)    (Cross-Enc) (LLM+Cite)│
-                    └─────────────────────────────────────────────┘
-                                                    │
-                                                    ▼
-                                          Cited Answer + Sources
-```
-
-## How It Works
-
-### 1. Document Ingestion
-- PDFs are parsed with PyMuPDF, preserving page numbers and structure
-- Text is split into overlapping chunks using recursive character splitting
-- Each chunk is embedded using a local HuggingFace model (`all-MiniLM-L6-v2`)
-- Embeddings are stored in ChromaDB with metadata (doc name, page number, chunk index)
-
-### 2. Retrieval (Hybrid Search)
-- User query is embedded using the same model
-- **Semantic search**: finds chunks with similar meaning via cosine similarity in ChromaDB
-- **Keyword search**: BM25 ranking catches exact matches that semantic search might miss
-- Results from both are merged using Reciprocal Rank Fusion (RRF)
-
-### 3. Reranking
-- Top candidates are reranked using a cross-encoder model for more precise relevance scoring
-- This step significantly improves answer quality over raw retrieval
-
-### 4. Answer Generation
-- Retrieved passages are formatted with source metadata
-- LLM generates an answer constrained to the provided context
-- Citation markers link each claim to specific source passages
-- If the answer isn't in the documents, the model says so instead of hallucinating
 
 ## Project Structure
-
 ```
-rag-document-qa/
+credit-risk-fairness-regimes/
 ├── README.md
 ├── requirements.txt
-├── .gitignore
-├── LICENSE
 ├── configs/
-│   └── config.yaml           # All configurable parameters
+│   └── config.yaml                    # Model & pipeline configuration
 ├── data/
-│   └── README.md              # Sample documents for testing
+│   └── README.md                      # Data download instructions
 ├── src/
-│   ├── __init__.py
-│   ├── document_loader.py     # PDF parsing and text extraction
-│   ├── chunker.py             # Text chunking strategies
-│   ├── embeddings.py          # Embedding model wrapper
-│   ├── vector_store.py        # ChromaDB operations
-│   ├── retriever.py           # Hybrid retrieval + reranking
-│   ├── generator.py           # LLM answer generation with citations
-│   └── rag_pipeline.py        # End-to-end orchestration
+│   ├── data_pipeline.py               # Data cleaning & feature engineering
+│   ├── features.py                    # Feature engineering functions
+│   ├── train.py                       # Model training with fairness constraints
+│   ├── evaluate.py                    # Evaluation metrics
+│   ├── fairness.py                    # Fairness metric calculations
+│   └── explain.py                     # SHAP explanations
 ├── streamlit_app/
-│   └── app.py                 # Interactive web interface
-├── tests/
-│   ├── test_chunker.py
-│   ├── test_retriever.py
-│   └── test_pipeline.py
-└── docs/
-    └── architecture.md
+│   └── app.py                         # Interactive fairness dashboard
+├── macro-regime/                      # ← Macro-regime extension
+│   ├── configs/config.yaml            # Tickers, HMM params, stress scenarios
+│   ├── src/
+│   │   ├── data_pipeline.py           # Yahoo Finance ingestion + features
+│   │   ├── regime_detector.py         # HMM regime detection + validation
+│   │   ├── regime_credit_analysis.py  # Regime-conditional credit analysis
+│   │   └── visualizations.py          # Publication-quality charts
+│   ├── run_analysis.py                # Full macro pipeline
+│   ├── run_bridge.py                  # Credit model ↔ regime connector
+│   ├── generate_charts.py             # Generate all 8 visualizations
+│   └── figures/                       # Generated charts
+└── tests/
+    ├── test_features.py
+    ├── test_fairness.py
+    └── test_pipeline.py
 ```
 
-## Configuration
+## Technical Details
 
-All parameters are in `configs/config.yaml`:
+### Credit Risk Model
+- **Data:** 1.3M Lending Club loans (2007–2018), 25+ engineered features
+- **Models:** XGBoost and LightGBM with Optuna hyperparameter optimization
+- **Fairness:** Three debiasing approaches — threshold adjustment, reweighting, constrained optimization
+- **Explainability:** SHAP TreeExplainer for global/local feature importance
 
-```yaml
-chunking:
-  strategy: "recursive"     # Options: fixed, sentence, recursive
-  chunk_size: 512
-  chunk_overlap: 50
+### Regime Detection
+- **Data:** 9 Yahoo Finance tickers, 15 engineered macro features, 3,990 trading days (2008–2025)
+- **Model:** Gaussian HMM with full covariance, 3 components, 10 random restarts
+- **Features:** Yield curve slope, rolling credit spread, smoothed VIX, 60-day S&P 500 return
+- **Validation:** 3/3 known economic events correctly classified without supervision
+- **Financial Conditions Index:** Equal-weighted z-score composite of yield curve, credit spread, VIX, and equity momentum
 
-retrieval:
-  top_k: 10                 # Candidates from vector search
-  rerank_top_k: 5           # Final passages after reranking
-  use_hybrid: true           # Enable BM25 + semantic fusion
+### Regime-Credit Integration
+- **Loan-regime mapping:** Each of 1.3M loans matched to the economic regime active at origination via nearest-date join
+- **Regime-conditional evaluation:** AUC, calibration error, and fairness metrics computed per regime
+- **Key result:** AUC degrades 0.040 from Expansion to Crisis; default rate 1.16× higher during Crisis
 
-generation:
-  model: "gpt-4o-mini"      # Or "ollama/llama3" for local
-  temperature: 0.1
-  max_tokens: 1000
-```
+## Fairness Metrics
 
-## Running Fully Local (No API Key)
+| Metric | What It Measures | Target |
+|--------|-----------------|--------|
+| **Demographic Parity** | Are approval rates equal across groups? | Gap < 0.05 |
+| **Equal Opportunity** | Are true positive rates equal across groups? | Gap < 0.05 |
+| **Predictive Parity** | Is precision equal across groups? | Gap < 0.05 |
+| **Calibration** | Are predicted probabilities accurate across groups? | Gap < 0.03 |
 
-DocQuery supports fully local operation using Ollama:
+## Regulatory Context
 
-```bash
-# Install Ollama: https://ollama.ai
-ollama pull llama3
+This project is informed by:
+- **CFPB Circular 2022-03** — adverse action notices for AI-driven lending
+- **ECOA / Regulation B** — prohibition of discrimination in credit decisions
+- **EU AI Act (2024)** — high-risk AI system requirements for credit scoring
+- **SR 11-7 (OCC/Fed)** — model risk management guidance
+- **CCAR/DFAST** — Federal Reserve stress testing requirements for bank capital adequacy
 
-# Update config
-# In configs/config.yaml, set: model: "ollama/llama3"
+## Dashboard
 
-# Run — no API key needed
-streamlit run streamlit_app/app.py
-```
+<p align="center">
+  <img src="Dashboard Preview 1.png" alt="Fairness Dashboard" width="800"/>
+  <img src="Dashboard Preview 2.png" alt="Fairness Dashboard" width="800"/>
+</p>
 
-## What I'd Improve
+## Author
 
-- Add support for tables and images in PDFs (currently text-only)
-- Implement query decomposition for complex multi-part questions
-- Add evaluation benchmarks using RAGAS framework
-- Build a feedback loop where users can rate answers to improve retrieval
-- Add support for Word docs, HTML, and markdown in addition to PDFs
-- Implement streaming responses for better UX on long answers
+**Ayoob Amaar** — MS Statistics & Machine Learning | MS Financial Engineering, Claremont Graduate University
 
 ## License
 
