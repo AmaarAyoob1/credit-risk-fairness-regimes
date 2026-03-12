@@ -127,4 +127,4 @@ class TestFairnessAudit:
 
         results = run_fairness_audit(y_true, y_pred, y_prob, protected)
         # With identical predictions across groups, DP should pass
-        assert results["demographic_parity"]["passes"] is True
+        assert results["demographic_parity"]["passes"] == True
